@@ -15,7 +15,14 @@ enum class EPlayerAttributeType : uint8
     Knowledge   UMETA(DisplayName = "知识")
 };
 
-UCLASS()
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChangedDelegate, float, NewHealth);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSanValueChangedDelegate, float, NewSanValue);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeadStateChangedDelegate, bool, bNewDeadState);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGhostStateChangedDelegate, bool, bNewGhostState);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAttributeChangedDelegate, EPlayerAttributeType, AttributeType, int32, NewValue);
+
+
+UCLASS(BlueprintType, Blueprintable)
 class TESTFORMINIGAME_API ATestForMinigamePlayerState : public APlayerState
 {
     GENERATED_BODY()
@@ -68,18 +75,21 @@ public:
     UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Player Actions")
     void ServerModifyAttribute(EPlayerAttributeType AttributeType, int32 DeltaValue);
 
-    // 蓝图事件 - 用于通知UI更新等
-    UFUNCTION(BlueprintImplementableEvent, Category = "Player Events")
-    void OnHealthChanged(float NewHealth);
+    // 委托事件 - 可以在蓝图中绑定
+    UPROPERTY(BlueprintAssignable, Category = "Player Events")
+    FOnHealthChangedDelegate OnHealthChanged;
 
-    UFUNCTION(BlueprintImplementableEvent, Category = "Player Events")
-    void OnSanValueChanged(float NewSanValue);
+    UPROPERTY(BlueprintAssignable, Category = "Player Events")
+    FOnSanValueChangedDelegate OnSanValueChanged;
 
-    UFUNCTION(BlueprintImplementableEvent, Category = "Player Events")
-    void OnDeadStateChanged(bool bNewDeadState);
+    UPROPERTY(BlueprintAssignable, Category = "Player Events")
+    FOnDeadStateChangedDelegate OnDeadStateChanged;
 
-    UFUNCTION(BlueprintImplementableEvent, Category = "Player Events")
-    void OnAttributeChanged(EPlayerAttributeType AttributeType, int32 NewValue);
+    UPROPERTY(BlueprintAssignable, Category = "Player Events")
+	FOnGhostStateChangedDelegate OnGhostStateChanged;
+
+    UPROPERTY(BlueprintAssignable, Category = "Player Events")
+    FOnAttributeChangedDelegate OnAttributeChanged;
 
 protected:
     // RepNotify函数

@@ -100,7 +100,7 @@ void ATestForMinigamePlayerState::OnRep_Health()
         FString Message = FString::Printf(TEXT("[%s] 血量变化: %.1f"), *GetPlayerName(), Health);
         GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Red, Message);
     }
-    OnHealthChanged(Health);
+    OnHealthChanged.Broadcast(Health);
 }
 
 void ATestForMinigamePlayerState::OnRep_SanValue()
@@ -110,7 +110,7 @@ void ATestForMinigamePlayerState::OnRep_SanValue()
         FString Message = FString::Printf(TEXT("[%s] 理智变化: %.1f"), *GetPlayerName(), SanValue);
         GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Blue, Message);
     }
-    OnSanValueChanged(SanValue);
+    OnSanValueChanged.Broadcast(SanValue);
 }
 
 void ATestForMinigamePlayerState::OnRep_IsDead()
@@ -120,7 +120,7 @@ void ATestForMinigamePlayerState::OnRep_IsDead()
         FString Message = FString::Printf(TEXT("[%s] 死亡状态: %s"), *GetPlayerName(), bIsDead ? TEXT("死亡") : TEXT("存活"));
         GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Purple, Message);
     }
-    OnDeadStateChanged(bIsDead);
+    OnDeadStateChanged.Broadcast(bIsDead);
 }
 
 void ATestForMinigamePlayerState::OnRep_IsGhost()
@@ -130,6 +130,7 @@ void ATestForMinigamePlayerState::OnRep_IsGhost()
         FString Message = FString::Printf(TEXT("[%s] 幽灵状态: %s"), *GetPlayerName(), bIsGhost ? TEXT("幽灵") : TEXT("实体"));
         GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Black, Message);
     }
+    OnGhostStateChanged.Broadcast(bIsGhost);
 }
 
 void ATestForMinigamePlayerState::OnRep_Sanity()
@@ -139,7 +140,7 @@ void ATestForMinigamePlayerState::OnRep_Sanity()
         FString Message = FString::Printf(TEXT("[%s] 理智属性: %d"), *GetPlayerName(), Sanity);
         GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Cyan, Message);
     }
-    OnAttributeChanged(EPlayerAttributeType::Sanity, Sanity);
+    OnAttributeChanged.Broadcast(EPlayerAttributeType::Sanity, Sanity);
 }
 
 void ATestForMinigamePlayerState::OnRep_Vitality()
@@ -149,7 +150,7 @@ void ATestForMinigamePlayerState::OnRep_Vitality()
         FString Message = FString::Printf(TEXT("[%s] 生命属性: %d"), *GetPlayerName(), Vitality);
         GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, Message);
     }
-    OnAttributeChanged(EPlayerAttributeType::Vitality, Vitality);
+    OnAttributeChanged.Broadcast(EPlayerAttributeType::Vitality, Vitality);
 }
 
 void ATestForMinigamePlayerState::OnRep_Speed()
@@ -159,7 +160,7 @@ void ATestForMinigamePlayerState::OnRep_Speed()
         FString Message = FString::Printf(TEXT("[%s] 移速属性: %d"), *GetPlayerName(), Speed);
         GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Yellow, Message);
     }
-    OnAttributeChanged(EPlayerAttributeType::Speed, Speed);
+    OnAttributeChanged.Broadcast(EPlayerAttributeType::Speed, Speed);
 }
 
 void ATestForMinigamePlayerState::OnRep_Will()
@@ -169,7 +170,7 @@ void ATestForMinigamePlayerState::OnRep_Will()
         FString Message = FString::Printf(TEXT("[%s] 意志属性: %d"), *GetPlayerName(), Will);
         GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Orange, Message);
     }
-    OnAttributeChanged(EPlayerAttributeType::Will, Will);
+    OnAttributeChanged.Broadcast(EPlayerAttributeType::Will, Will);
 }
 
 void ATestForMinigamePlayerState::OnRep_Knowledge()
@@ -179,7 +180,7 @@ void ATestForMinigamePlayerState::OnRep_Knowledge()
         FString Message = FString::Printf(TEXT("[%s] 知识属性: %d"), *GetPlayerName(), Knowledge);
         GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Magenta, Message);
     }
-    OnAttributeChanged(EPlayerAttributeType::Knowledge, Knowledge);
+    OnAttributeChanged.Broadcast(EPlayerAttributeType::Knowledge, Knowledge);
 }
 
 // 辅助函数实现
