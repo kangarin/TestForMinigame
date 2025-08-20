@@ -63,13 +63,5 @@ protected:
 public:
     // 检查并处理阶段转换
     void CheckPhaseTransition();
-
-    // 触发UI更新 (多播)
-    UFUNCTION(NetMulticast, Reliable)
-    void MulticastUpdateUI(int32 OldValue, int32 NewValue);
-
-    // 触发二阶段转换 (多播)
-    UFUNCTION(NetMulticast, Reliable)
-    void MulticastEnterPhaseTwo();
 	
 };

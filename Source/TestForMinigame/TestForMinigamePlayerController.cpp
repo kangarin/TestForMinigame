@@ -90,21 +90,7 @@ void ATestForMinigamePlayerController::ServerAddInsightValue_Implementation(int3
 	// 在服务器上执行，直接操作GameState
 	if (ATestForMinigameGameState* GS = GetWorld()->GetGameState<ATestForMinigameGameState>())
 	{
-		int32 OldValue = GS->GlobalInsightValue;
-		GS->GlobalInsightValue = FMath::Clamp(GS->GlobalInsightValue + Amount, 0, GS->MaxInsightValue);
-
-		UE_LOG(LogTemp, Warning, TEXT("PlayerController修改灵视值: %d -> %d"), OldValue, GS->GlobalInsightValue);
-
-		// 检查阶段转换
-		if (GS->GlobalInsightValue >= GS->MaxInsightValue && !GS->bIsPhaseTwo)
-		{
-			GS->bIsPhaseTwo = true;
-			GS->MulticastEnterPhaseTwo();
-			UE_LOG(LogTemp, Error, TEXT("通过PlayerController进入二阶段！"));
-		}
-
-		// 多播UI更新
-		GS->MulticastUpdateUI(OldValue, GS->GlobalInsightValue);
+		GS->AddInsightValueDirect(Amount);
 	}
 }
 

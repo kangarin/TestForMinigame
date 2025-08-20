@@ -39,8 +39,8 @@ void ATestForMinigameGameState::AddInsightValueDirect(int32 Amount)
     // 检查阶段转换
     CheckPhaseTransition();
 
-    // 多播UI更新
-    MulticastUpdateUI(OldValue, GlobalInsightValue);
+	// 触发灵视值变化事件
+	OnInsightValueChanged.Broadcast(GlobalInsightValue, OldValue);
 
     UE_LOG(LogTemp, Warning, TEXT("GameState: 灵视值变化完成 %d -> %d (+%d)"), OldValue, GlobalInsightValue, Amount);
 }
@@ -51,36 +51,12 @@ void ATestForMinigameGameState::CheckPhaseTransition()
     if (GlobalInsightValue >= MaxInsightValue && !bIsPhaseTwo)
     {
         bIsPhaseTwo = true;
-        MulticastEnterPhaseTwo();
+        OnEnterPhaseTwo.Broadcast();
 
         UE_LOG(LogTemp, Error, TEXT("进入二阶段！灵视值已达到 %d"), MaxInsightValue);
     }
 }
 
-void ATestForMinigameGameState::MulticastUpdateUI_Implementation(int32 OldValue, int32 NewValue)
-{
-    // 在所有客户端执行UI更新
-    OnInsightValueChanged.Broadcast(NewValue, OldValue);
-
-	// 屏幕提示
-    if (GEngine)
-    {
-        FString Message = FString::Printf(TEXT("灵视值变化: %d -> %d"), OldValue, NewValue);
-        GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, Message);
-	}
-}
-
-void ATestForMinigameGameState::MulticastEnterPhaseTwo_Implementation()
-{
-    // 在所有客户端触发二阶段事件
-    OnEnterPhaseTwo.Broadcast();
-
-    // 屏幕提示
-    if (GEngine)
-    {
-        GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("进入二阶段：揭示阶段"));
-    }
-}
 
 int32 ATestForMinigameGameState::GetCurrentThresholdLevel() const
 {
