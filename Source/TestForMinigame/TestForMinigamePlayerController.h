@@ -17,6 +17,9 @@ UCLASS(abstract)
 class ATestForMinigamePlayerController : public APlayerController
 {
 	GENERATED_BODY()
+
+public:
+	ATestForMinigamePlayerController();
 	
 protected:
 
@@ -40,5 +43,19 @@ protected:
 
 	/** Input mapping context setup */
 	virtual void SetupInputComponent() override;
+
+	// 服务器RPC - 增加灵视值（这个有Owner，能正常工作）
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Insight")
+	void ServerAddInsightValue(int32 Amount);
+
+private:
+	void ServerAddInsightValue_Implementation(int32 Amount);
+
+	// 事件绑定
+	UFUNCTION()
+	void OnInsightChanged(int32 NewValue, int32 OldValue);
+
+	UFUNCTION()
+	void OnPhaseTwo();
 
 };
