@@ -25,12 +25,19 @@ public:
     // ========== 公开属性 ==========
 
     // 当前灵视值 (网络复制)
-    UPROPERTY(Replicated, BlueprintReadOnly, Category = "Insight")
+    UPROPERTY(Replicated, BlueprintReadOnly, Category = "Insight", ReplicatedUsing = OnRep_GlobalInsightValue)
     int32 GlobalInsightValue = 0;
 
     // 是否已进入二阶段
-    UPROPERTY(Replicated, BlueprintReadOnly, Category = "Insight")
+    UPROPERTY(Replicated, BlueprintReadOnly, Category = "Insight", ReplicatedUsing = OnRep_IsPhaseTwo)
     bool bIsPhaseTwo = false;
+
+    // 添加RepNotify函数声明
+    UFUNCTION()
+    void OnRep_GlobalInsightValue(int32 OldValue);
+
+    UFUNCTION()
+    void OnRep_IsPhaseTwo();
 
     // 灵视值上限
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Insight")
