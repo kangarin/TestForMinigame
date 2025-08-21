@@ -1,30 +1,31 @@
-// SimpleInventoryComponent.h
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "ItemDataAsset.h"
 #include "SimpleInventoryComponent.generated.h"
 
-// ¼òµ¥µÄÎïÆ·½á¹¹
+// èƒŒåŒ…æ§½ä½ç»“æ„
 USTRUCT(BlueprintType)
-struct FSimpleItem
+struct FInventorySlot
 {
     GENERATED_BODY()
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    FString UniqueID;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    FString ItemName;
+    UItemDataAsset* ItemData;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     int32 Quantity;
 
-    FSimpleItem()
+    FInventorySlot()
     {
-		UniqueID = TEXT("myid");
-        ItemName = TEXT("");
+        ItemData = nullptr;
         Quantity = 0;
+    }
+
+    bool IsEmpty() const
+    {
+        return ItemData == nullptr || Quantity <= 0;
     }
 };
 
@@ -36,19 +37,46 @@ class TESTFORMINIGAME_API USimpleInventoryComponent : public UActorComponent
 public:
     USimpleInventoryComponent();
 
-    // ±³°üÎïÆ·Êı×é
+    // èƒŒåŒ…æ§½ä½æ•°ç»„
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
-    TArray<FSimpleItem> Items;
+    TArray<FInventorySlot> Slots;
 
-    // Ìí¼ÓÎïÆ· - ½ÓÊÜFSimpleItem½á¹¹Ìå
+    // èƒŒåŒ…æœ€å¤§å®¹é‡
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
+    int32 MaxSlots = 20;
+
+    // é¢„é…ç½®çš„ç‰©å“ï¼ˆå¯åœ¨è“å›¾ä¸­è®¾ç½®ï¼‰
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
+    TArray<UItemDataAsset*> ConfiguredItems;
+
+protected:
+    virtual void BeginPlay() override;
+
+public:
+    // é€šè¿‡ItemDataAssetæ·»åŠ ç‰©å“
     UFUNCTION(BlueprintCallable, Category = "Inventory")
-    void AddItem(const FSimpleItem& Item);
+    bool AddItem(UItemDataAsset* ItemData, int32 Quantity = 1);
 
-    // ÒÆ³ıÎïÆ·
+    // é€šè¿‡ç´¢å¼•æ·»åŠ é¢„é…ç½®çš„ç‰©å“
     UFUNCTION(BlueprintCallable, Category = "Inventory")
-    bool RemoveItem(FString UniqueID, int32 Quantity);
+    bool AddConfiguredItem(int32 ItemIndex, int32 Quantity = 1);
 
-    // ´òÓ¡±³°üÄÚÈİ£¨ÓÃÓÚ²âÊÔ£©
+    // ç§»é™¤ç‰©å“
+    UFUNCTION(BlueprintCallable, Category = "Inventory")
+    bool RemoveItem(FString UniqueID, int32 Quantity = 1);
+
+    // è·å–ç‰©å“æ•°é‡
+    UFUNCTION(BlueprintCallable, Category = "Inventory")
+    int32 GetItemQuantity(FString UniqueID);
+
+    // æ‰“å°èƒŒåŒ…å†…å®¹
     UFUNCTION(BlueprintCallable, Category = "Inventory")
     void PrintInventory();
+
+private:
+    // å°è¯•å †å ç‰©å“
+    bool TryStackItem(UItemDataAsset* ItemData, int32& Quantity);
+
+    // è·å–ç©ºæ§½ä½ç´¢å¼•
+    int32 GetEmptySlotIndex();
 };

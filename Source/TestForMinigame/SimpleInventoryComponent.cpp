@@ -1,4 +1,3 @@
-// SimpleInventoryComponent.cpp
 #include "SimpleInventoryComponent.h"
 
 USimpleInventoryComponent::USimpleInventoryComponent()
@@ -6,71 +5,191 @@ USimpleInventoryComponent::USimpleInventoryComponent()
     PrimaryComponentTick.bCanEverTick = false;
 }
 
-void USimpleInventoryComponent::AddItem(const FSimpleItem& Item)
+void USimpleInventoryComponent::BeginPlay()
 {
+    Super::BeginPlay();
+    
+    // ÂàùÂßãÂåñËÉåÂåÖÊßΩ‰Ωç
+    Slots.SetNum(MaxSlots);
+    
+    UE_LOG(LogTemp, Warning, TEXT("Inventory initialized with %d slots"), MaxSlots);
+    UE_LOG(LogTemp, Warning, TEXT("Configured items count: %d"), ConfiguredItems.Num());
+}
 
-    // ºÏ≤È «∑Ò“—”–œ‡Õ¨√˚≥∆µƒŒÔ∆∑
-    for (FSimpleItem& ExistingItem : Items)
+bool USimpleInventoryComponent::AddItem(UItemDataAsset* ItemData, int32 Quantity)
+{
+    if (!ItemData || Quantity <= 0)
     {
-        if (ExistingItem.UniqueID == Item.UniqueID)
-        {
-            // »Áπ˚’“µΩœ‡Õ¨ŒÔ∆∑£¨‘ˆº” ˝¡ø
-            ExistingItem.Quantity += Item.Quantity;
-            UE_LOG(LogTemp, Warning, TEXT("Added %d %s, total: %d"), Item.Quantity, *Item.ItemName, ExistingItem.Quantity);
-            return;
-        }
+        UE_LOG(LogTemp, Warning, TEXT("Invalid item data or quantity"));
+        return false;
     }
 
-    // »Áπ˚√ª’“µΩœ‡Õ¨ŒÔ∆∑£¨ÃÌº”–¬ŒÔ∆∑
-    Items.Add(Item);
-    UE_LOG(LogTemp, Warning, TEXT("Added new item: %s %d %s"), *Item.UniqueID, Item.Quantity, *Item.ItemName);
+    UE_LOG(LogTemp, Warning, TEXT("Trying to add %d x %s"), Quantity, *ItemData->ItemName);
+
+    int32 RemainingQuantity = Quantity;
+
+    // Â¶ÇÊûúÁâ©ÂìÅÂèØ‰ª•Â†ÜÂè†ÔºåÂÖàÂ∞ùËØïÂ†ÜÂè†Âà∞Áé∞ÊúâÊßΩ‰Ωç
+    if (ItemData->MaxStackSize > 1)
+    {
+        TryStackItem(ItemData, RemainingQuantity);
+    }
+
+    // Â¶ÇÊûúËøòÊúâÂâ©‰ΩôÔºåÊ∑ªÂä†Âà∞Á©∫ÊßΩ‰Ωç
+    while (RemainingQuantity > 0)
+    {
+        int32 EmptySlotIndex = GetEmptySlotIndex();
+        if (EmptySlotIndex == -1)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Inventory is full!"));
+            return false;
+        }
+
+        // ËÆ°ÁÆóËøô‰∏™ÊßΩ‰ΩçËÉΩÊîæÂ§öÂ∞ë
+        int32 AddQuantity = FMath::Min(RemainingQuantity, ItemData->MaxStackSize);
+        
+        // ËÆæÁΩÆÊßΩ‰ΩçÊï∞ÊçÆ
+        Slots[EmptySlotIndex].ItemData = ItemData;
+        Slots[EmptySlotIndex].Quantity = AddQuantity;
+        
+        RemainingQuantity -= AddQuantity;
+
+        UE_LOG(LogTemp, Warning, TEXT("Added %d x %s to slot %d"), AddQuantity, *ItemData->ItemName, EmptySlotIndex);
+    }
+
+    return true;
+}
+
+bool USimpleInventoryComponent::AddConfiguredItem(int32 ItemIndex, int32 Quantity)
+{
+    if (ItemIndex < 0 || ItemIndex >= ConfiguredItems.Num())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Invalid item index: %d"), ItemIndex);
+        return false;
+    }
+
+    if (!ConfiguredItems[ItemIndex])
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Item at index %d is null"), ItemIndex);
+        return false;
+    }
+
+    return AddItem(ConfiguredItems[ItemIndex], Quantity);
 }
 
 bool USimpleInventoryComponent::RemoveItem(FString UniqueID, int32 Quantity)
 {
-    for (int32 i = 0; i < Items.Num(); i++)
+    for (int32 i = 0; i < Slots.Num(); i++)
     {
-        if (Items[i].UniqueID == UniqueID)
+        FInventorySlot& Slot = Slots[i];
+        
+        if (!Slot.IsEmpty() && Slot.ItemData->UniqueID == UniqueID)
         {
-            if (Items[i].Quantity >= Quantity)
+            if (Slot.Quantity >= Quantity)
             {
-                Items[i].Quantity -= Quantity;
-                UE_LOG(LogTemp, Warning, TEXT("Removed %d %s, remaining: %d"), Quantity, *UniqueID, Items[i].Quantity);
-
-                // »Áπ˚ ˝¡øŒ™0£¨¥” ˝◊È÷–“∆≥˝
-                if (Items[i].Quantity <= 0)
+                Slot.Quantity -= Quantity;
+                UE_LOG(LogTemp, Warning, TEXT("Removed %d x %s from slot %d"), Quantity, *Slot.ItemData->ItemName, i);
+                
+                // Â¶ÇÊûúÊï∞Èáè‰∏∫0ÔºåÊ∏ÖÁ©∫ÊßΩ‰Ωç
+                if (Slot.Quantity <= 0)
                 {
-                    Items.RemoveAt(i);
-                    UE_LOG(LogTemp, Warning, TEXT("%s completely removed from inventory"), *UniqueID);
+                    UE_LOG(LogTemp, Warning, TEXT("Slot %d is now empty"), i);
+                    Slot.ItemData = nullptr;
+                    Slot.Quantity = 0;
                 }
                 return true;
             }
             else
             {
-                UE_LOG(LogTemp, Warning, TEXT("Not enough %s to remove. Have: %d, Want: %d"), *UniqueID, Items[i].Quantity, Quantity);
+                UE_LOG(LogTemp, Warning, TEXT("Not enough items. Have: %d, Want: %d"), Slot.Quantity, Quantity);
                 return false;
             }
         }
     }
-
-    UE_LOG(LogTemp, Warning, TEXT("Item %s not found in inventory"), *UniqueID);
+    
+    UE_LOG(LogTemp, Warning, TEXT("Item with ID %s not found"), *UniqueID);
     return false;
+}
+
+int32 USimpleInventoryComponent::GetItemQuantity(FString UniqueID)
+{
+    int32 TotalQuantity = 0;
+    
+    for (const FInventorySlot& Slot : Slots)
+    {
+        if (!Slot.IsEmpty() && Slot.ItemData->UniqueID == UniqueID)
+        {
+            TotalQuantity += Slot.Quantity;
+        }
+    }
+    
+    return TotalQuantity;
 }
 
 void USimpleInventoryComponent::PrintInventory()
 {
     UE_LOG(LogTemp, Warning, TEXT("=== Inventory Contents ==="));
-
-    if (Items.Num() == 0)
+    
+    bool HasItems = false;
+    
+    for (int32 i = 0; i < Slots.Num(); i++)
+    {
+        const FInventorySlot& Slot = Slots[i];
+        if (!Slot.IsEmpty())
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Slot %d: %s x%d (ID: %s)"), 
+                   i, *Slot.ItemData->ItemName, Slot.Quantity, *Slot.ItemData->UniqueID);
+            HasItems = true;
+        }
+    }
+    
+    if (!HasItems)
     {
         UE_LOG(LogTemp, Warning, TEXT("Inventory is empty"));
-        return;
     }
-
-    for (int32 i = 0; i < Items.Num(); i++)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("%d. %s x%d"), i + 1, *Items[i].ItemName, Items[i].Quantity);
-    }
-
+    
     UE_LOG(LogTemp, Warning, TEXT("========================"));
+}
+
+bool USimpleInventoryComponent::TryStackItem(UItemDataAsset* ItemData, int32& Quantity)
+{
+    bool bStacked = false;
+
+    // ÈÅçÂéÜÊâÄÊúâÊßΩ‰ΩçÔºåÂØªÊâæÂèØ‰ª•Â†ÜÂè†ÁöÑÁâ©ÂìÅ
+    for (int32 i = 0; i < Slots.Num() && Quantity > 0; i++)
+    {
+        FInventorySlot& Slot = Slots[i];
+        
+        // Ê£ÄÊü•ÊòØÂê¶ÊòØÁõ∏ÂêåÁâ©ÂìÅ‰∏îÊúâÂ†ÜÂè†Á©∫Èó¥
+        if (!Slot.IsEmpty() && 
+            Slot.ItemData->UniqueID == ItemData->UniqueID &&
+            Slot.Quantity < ItemData->MaxStackSize)
+        {
+            // ËÆ°ÁÆóÂèØ‰ª•Â†ÜÂè†ÁöÑÊï∞Èáè
+            int32 AvailableSpace = ItemData->MaxStackSize - Slot.Quantity;
+            int32 AddQuantity = FMath::Min(Quantity, AvailableSpace);
+            
+            // Â¢ûÂä†Êï∞Èáè
+            Slot.Quantity += AddQuantity;
+            Quantity -= AddQuantity;
+            
+            bStacked = true;
+            
+            UE_LOG(LogTemp, Warning, TEXT("Stacked %d x %s to slot %d, total: %d"), 
+                   AddQuantity, *ItemData->ItemName, i, Slot.Quantity);
+        }
+    }
+
+    return bStacked;
+}
+
+int32 USimpleInventoryComponent::GetEmptySlotIndex()
+{
+    for (int32 i = 0; i < Slots.Num(); i++)
+    {
+        if (Slots[i].IsEmpty())
+        {
+            return i;
+        }
+    }
+    return -1;
 }
